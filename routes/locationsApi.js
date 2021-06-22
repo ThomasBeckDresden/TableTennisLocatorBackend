@@ -11,4 +11,19 @@ app.get("/", (req, res) =>{
     .catch(err => res.sendStatus(500))
   })
 
+app.get("/:id", (req,res)=>{
+  const id = req.params.id;
+  const getOneLocation = {
+    text:`
+    SELECT * FROM locations WHERE id=$1;"
+    `,
+    values: [id]
+
+  }
+  pool
+  .query(getOneLocation)
+  .then((data)=>res.json(data.rows))
+  .catch(err => res.sendStatus(500))
+})
+
 module.exports = app;
