@@ -1,5 +1,6 @@
 const { Pool } = require("pg");
 const express = require("express");
+const format = require("pg-format");
 
 const app = express();
 const pool = new Pool();
@@ -30,10 +31,12 @@ app.get("/search", (req, res) => {
   const { column, query } = req.body;
   console.log(column, query);
 
+  // var format = require('pg-format');
+  // var sql = format('SELECT * FROM %I WHERE my_col = %L %s', 'my_table', 34, 'LIMIT 10')
   //const { query } = req.body; http://www.google.com/hi/there ? qs1=you & qs2=tube
   const getMatchingLocations = {
-    text: "SELECT * FROM locations WHERE $1 LIKE $2",
-    values: [column, query],
+    text: `SELECT * FROM locations WHERE adress LIKE $1`,
+    values: [query],
   };
 
   pool
