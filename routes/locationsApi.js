@@ -4,14 +4,14 @@ const express = require("express");
 const app = express();
 const pool = new Pool();
 
-app.get("/", (req, res) => {
+app.get("/posts", (req, res) => {
   pool
     .query("SELECT * FROM locations")
     .then((data) => res.status(200).send(data.rows))
     .catch((err) => res.sendStatus(500));
 });
 
-app.get("/:id", (req, res) => {
+app.get("/posts/:id", (req, res) => {
   const id = req.params.id;
   const getOneLocation = {
     text: `
@@ -24,6 +24,26 @@ app.get("/:id", (req, res) => {
     .then((data) => res.send(data.rows))
     .catch((err) => res.sendStatus(500));
 });
+
+app.get("/search", (req, res) => {
+  console.log(req.body);
+  const { column, query } = req.body;
+  console.log(column, query);
+
+  //const { query } = req.body; http://www.google.com/hi/there ? qs1=you & qs2=tube
+  const getMatchingLocations = {
+    text: "SELECT * FROM locations WHERE $1 LIKE $2",
+    values: [column, query],
+  };
+
+  pool
+    .query(getMatchingLocations)
+    .then((data) => res.send(data.rows))
+    .catch((err) => {
+      console.log(err);
+      res.send(err);
+    });
+}); // e.g /search/city?=berlin
 
 app.post("/", (req, res) => {
   const {
