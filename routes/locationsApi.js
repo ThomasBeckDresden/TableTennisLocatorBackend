@@ -27,20 +27,22 @@ app.get("/posts/:id", (req, res) => {
 });
 
 app.get("/search", (req, res) => {
-  console.log(req.body);
   const { column, query } = req.body;
   console.log(column, query);
 
   // var format = require('pg-format');
   // var sql = format('SELECT * FROM %I WHERE my_col = %L %s', 'my_table', 34, 'LIMIT 10')
   //const { query } = req.body; http://www.google.com/hi/there ? qs1=you & qs2=tube
-  const getMatchingLocations = {
-    text: `SELECT * FROM locations WHERE adress LIKE $1`,
-    values: [query],
-  };
+  const getSearchResults = format(
+    "SELECT * FROM locations WHERE %I LIKE '%%%s%%'",
+    column,
+    query
+  );
+
+  console.log(getSearchResults);
 
   pool
-    .query(getMatchingLocations)
+    .query(getSearchResults)
     .then((data) => res.send(data.rows))
     .catch((err) => {
       console.log(err);
