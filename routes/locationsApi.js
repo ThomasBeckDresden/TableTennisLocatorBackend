@@ -163,6 +163,20 @@ app.put("/:id", checkEntryExists, (req, res) => {
       console.log(e);
     });
 });
+app.delete("/:id", checkEntryExists, (req, res) => {
+  const existingEntry = req.entry;
+  const deleteOneEntry = {
+    text: `DELeTE FROM locations WHERE id=$1 RETURNING *
+    `,
+    values: [existingEntry.id],
+  };
+  db.query(deleteOneEntry)
+    .then((data) => res.send(`${data.rows} has been succesfully removed!`))
+    .catch((e) => {
+      res.send(`There has been an error in the database`);
+      console.log(e);
+    });
+});
 
 module.exports = app;
 
