@@ -1,13 +1,11 @@
-const { Pool } = require("pg");
 const express = require("express");
 const format = require("pg-format");
-
+const db = require("../db/client");
+const checkEntryExists = require("../utils/checkEntryExists");
 const app = express();
-const pool = new Pool();
 
 app.get("/posts", (req, res) => {
-  pool
-    .query("SELECT * FROM locations")
+  db.query("SELECT * FROM locations")
     .then((data) => res.status(200).send(data.rows))
     .catch((err) => res.sendStatus(500));
 });
@@ -20,14 +18,16 @@ app.get("/posts/:id", (req, res) => {
     `,
     values: [id],
   };
-  pool
-    .query(getOneLocation)
+  db.query(getOneLocation)
     .then((data) => res.send(data.rows))
     .catch((err) => res.sendStatus(500));
 });
 
-app.get("/search", (req, res) => {
-  const { column, query } = req.body;
+// POST for GET search results -> data can only be sent with axios POST
+app.post("/search", (req, res) => {
+  const {
+    data: { column, query },
+  } = req.body;
   console.log(column, query);
 
   // var format = require('pg-format');
@@ -39,10 +39,7 @@ app.get("/search", (req, res) => {
     query
   );
 
-  console.log(getSearchResults);
-
-  pool
-    .query(getSearchResults)
+  db.query(getSearchResults)
     .then((data) => res.send(data.rows))
     .catch((err) => {
       console.log(err);
@@ -50,6 +47,7 @@ app.get("/search", (req, res) => {
     });
 }); // e.g /search/city?=berlin
 
+// POST
 app.post("/", (req, res) => {
   const {
     tags,
@@ -98,12 +96,71 @@ app.post("/", (req, res) => {
     ],
   };
 
-  pool
-    .query(postNewLocation)
+  db.query(postNewLocation)
     .then((data) => res.send(data.rows))
     .catch((err) => {
       console.log(err);
       res.status(500).send(err);
+    });
+});
+
+// PUT
+app.put("/:id", checkEntryExists, (req, res) => {
+  const existingEntry = req.entry;
+  const requestedChange = req.body;
+
+  let updatedEntry = {};
+
+  for (prop in existingEntry) {
+    updatedEntry[prop] = requestedChange[prop] || existingEntry[prop];
+  }
+
+  console.log(updatedEntry);
+
+  //   UPDATE t
+  // SET c1 = new_value,
+  // c2 = new_value
+  // WHEREcondition;
+  // Update values in the column
+
+  const updateLocation = {
+    text: `UPDATE locations 
+    SET tags=$1,
+    title=$2,
+    adress=$3,
+    longitude=$4,
+    latitude=$5,
+    condition=$6,
+    popularity=$7,
+    picturesDescription=$8,
+    picturesUrl=$9,
+    description=$10,
+    supplies=$11
+    WHERE id = $12
+    RETURNING *`,
+    values: [
+      updatedEntry.tags,
+      updatedEntry.title,
+      updatedEntry.adress,
+      updatedEntry.longitude,
+      updatedEntry.latitude,
+      updatedEntry.condition,
+      updatedEntry.popularity,
+      updatedEntry.picturesDescription,
+      updatedEntry.picturesUrl,
+      updatedEntry.description,
+      updatedEntry.supplies,
+      updatedEntry.id,
+    ],
+  };
+
+  db.query(updateLocation)
+    .then((data) => {
+      res.json(data.rows);
+    })
+    .catch((e) => {
+      res.send("There was a database error");
+      console.log(e);
     });
 });
 
